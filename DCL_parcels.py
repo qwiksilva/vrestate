@@ -19,29 +19,62 @@ client = Client(transport=transport, fetch_schema_from_transport=True)
 #How close to road, double road, or plaza. Look at marketplace source code
 mystring = """
 query {{
-    orders (first: 1000 orderBy: updatedAt, orderDirection: asc where: {{ status:sold category:parcel updatedAt_gt:"{0}"}}) {{
-        
+    orders (first: 1000 orderBy: updatedAt, orderDirection: asc where: {{ status:sold category:parcel createdAt_gt:"{0}"}}) {{
         id
         category 
         price
         status 
         updatedAt
+        nftAddress
+        txHash
+        owner
+        buyer
+        blockNumber
+        expiresAt
+        createdAt
         nft {{
             owner {{
                 id
-                }}
+                address
+                mana
+            }}
+            parcel {{
+                x
+                y
+                id
+                tokenId
+                rawData
+            }}
             name
             tokenURI
-            }}
+            id
+            contractAddress
+            category
+            image
+            searchOrderPrice
+            createdAt
+            updatedAt
+            searchOrderStatus
+            searchOrderPrice
+            searchOrderExpiresAt
+            searchOrderCreatedAt
+            searchIsLand
+            searchText
+            searchParcelIsInBounds
+            searchParcelX
+            searchParcelY
+            searchParcelEstateId
         }}
-    }}"""
+    }}
+}}"""
 
 df = pd.DataFrame()
 #update parameter used in mystring to start querying the database at the earliest update date of sale. The update 
 #date is specified in epoch date and needs to be converted to datetime for human consumption.
 update = 1
 
-while True:
+# while True:
+for _ in range(1):
     #query the data using GraphQL python library.
     query = gql(mystring.format(update))
     result = client.execute(query)
@@ -57,12 +90,16 @@ while True:
         df = df.append(df1)
     
         #Pass into the API the max date from your dataset to fetch the next 1000 records.
-        update = df['updatedAt'].max()
+        update = df['createdAt'].max()
 
 
 #reformat the update date in human-readable datetime format.
 df['updatedAt_dt'] = df['updatedAt'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(int(x))) )
 df1['updatedAt_dt'] = df1['updatedAt'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(int(x))) )
+df['createdAt_dt'] = df['createdAt'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(int(x))) )
+df1['createdAt_dt'] = df1['createdAt'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(int(x))) )
+df['expiresAt_dt'] = df['expiresAt'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(int(x))) )
+df1['expiresAt_dt'] = df1['expiresAt'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(int(x))) )
 
 df.price = df.price.astype(float)
 df.price = df.price.round()
